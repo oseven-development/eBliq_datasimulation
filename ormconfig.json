@@ -3,7 +3,7 @@
   "type": "mongodb",
   "host": "localhost",
   "port": 30003,
-  "database": "test",
+  "database": "demo",
   "synchronize": true,
   "logging": false,
   "autoSchemaSync": true,

@@ -15,11 +15,15 @@ import { Order } from './entity/Order'
 
 createConnection()
   .then(async connection => {
+    let i = 1
     setInterval(async () => {
       const myOrder = new Order()
-      myOrder.name = Math.random()
+      const val = i
+      myOrder.name = 'max'
+      myOrder.orderId = val
       myOrder.value = Math.random()
+      i++
       await connection.mongoManager.save(myOrder)
-    }, Number(process.env.speed) || 1000)
+    }, Number(process.env.speed) || 1)
   })
   .catch(error => console.log('Error: ', error))
