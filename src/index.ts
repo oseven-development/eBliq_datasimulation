@@ -3,7 +3,7 @@ import 'reflect-metadata'
 // import { OBJA } from './simulation/'
 import { createConnection } from 'typeorm'
 import { Order } from './entity/Order'
-
+import data from './data/product'
 // const x = async () => {
 //   //   const simu = new Simulation()
 //   //   simu.run([OBJA])
@@ -17,13 +17,15 @@ createConnection()
   .then(async connection => {
     let i = 1
     setInterval(async () => {
-      const myOrder = new Order()
-      const val = i
-      myOrder.name = 'max'
+      let myOrder = new Order()
+      let val = i
+      let index = Math.floor(Math.random() * (10 - 1 + 1) + 1)
+      myOrder.name = data[index].name
       myOrder.orderId = val
-      myOrder.value = Math.random()
+      myOrder.productId = data[index].productId
+      myOrder.value = data[index].price
       i++
       await connection.mongoManager.save(myOrder)
-    }, Number(process.env.speed) || 1)
+    }, Number(process.env.speed) || 3000)
   })
   .catch(error => console.log('Error: ', error))

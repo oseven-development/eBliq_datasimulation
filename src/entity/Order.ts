@@ -9,6 +9,9 @@ export class Order extends BaseEntity {
   orderId: number
 
   @Column()
+  productId: number
+
+  @Column()
   name: string
 
   @Column()
