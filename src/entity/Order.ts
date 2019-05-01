@@ -1,24 +1,38 @@
-import { Entity, PrimaryGeneratedColumn, Column, BeforeInsert } from 'typeorm'
+import { Entity, PrimaryGeneratedColumn, Column, BeforeInsert,  ObjectID, ObjectIdColumn,} from 'typeorm'
 
 @Entity()
 export class Order {
-  @PrimaryGeneratedColumn()
-  id: number
+    
+    @ObjectIdColumn()
+    id: ObjectID;
 
-  @Column()
-  firstName: string
+    @Column({ default: Math.random() })
+    name: string;
 
-  @Column()
-  lastName: string
-
-  @Column()
-  age: number
-
-  @BeforeInsert()
-  updateDates() {
-    this.firstName = 'max'
-  }
+    @Column({ default: Math.random() })
+    value: string
 }
+
+
+// @Entity()
+// export class Order {
+//   @PrimaryGeneratedColumn()
+//   id: number
+
+//   @Column()
+//   firstName: string
+
+//   @Column()
+//   lastName: string
+
+//   @Column()
+//   age: number
+
+//   @BeforeInsert()
+//   updateDates() {
+//     this.firstName = 'max'
+//   }
+// }
 
 
 /* 
