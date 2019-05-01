@@ -2,6 +2,7 @@
   "name": "default",
   "type": "mongodb",
   "host": "localhost",
+  "port": 30003,
   "database": "test",
   "synchronize": true,
   "logging": false,

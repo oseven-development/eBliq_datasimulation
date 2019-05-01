@@ -6,10 +6,10 @@ export class Order extends BaseEntity {
   id: ObjectID
 
   @Column()
-  firstName: string
+  name: number
 
   @Column()
-  lastName: string
+  value: number
 }
 
 /* 
