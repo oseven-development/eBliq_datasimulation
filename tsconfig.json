@@ -26,6 +26,8 @@
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true
   },
+
   "files": ["src/index.ts"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules"],
+  "entities": ["entity/**/*.ts"]
 }

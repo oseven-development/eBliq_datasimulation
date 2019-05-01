@@ -1,14 +1,13 @@
 {
   "name": "default",
-  "type": "sqlite",
-  "database": "db.sqlite3",
+  "type": "mongodb",
+  "host": "localhost",
+  "database": "test",
+  "synchronize": true,
+  "logging": false,
   "autoSchemaSync": true,
   "entities": ["src/entity/*.ts"],
   "migrations": ["src/migration/*.ts"],
-  "synchronize": true,
-  "logging": {
-    "logQueries": true
-  },
   "cli": {
     "entitiesDir": "src/entity",
     "migrationsDir": "src/migration"

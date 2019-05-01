@@ -1,39 +1,16 @@
-import { Entity, PrimaryGeneratedColumn, Column, BeforeInsert,  ObjectID, ObjectIdColumn,} from 'typeorm'
+import { BaseEntity, Entity, ObjectID, ObjectIdColumn, Column } from 'typeorm'
 
 @Entity()
-export class Order {
-    
-    @ObjectIdColumn()
-    id: ObjectID;
+export class Order extends BaseEntity {
+  @ObjectIdColumn()
+  id: ObjectID
 
-    @Column({ default: Math.random() })
-    name: string;
+  @Column()
+  firstName: string
 
-    @Column({ default: Math.random() })
-    value: string
+  @Column()
+  lastName: string
 }
-
-
-// @Entity()
-// export class Order {
-//   @PrimaryGeneratedColumn()
-//   id: number
-
-//   @Column()
-//   firstName: string
-
-//   @Column()
-//   lastName: string
-
-//   @Column()
-//   age: number
-
-//   @BeforeInsert()
-//   updateDates() {
-//     this.firstName = 'max'
-//   }
-// }
-
 
 /* 
 
@@ -52,3 +29,4 @@ Artikelliste
 
 Rabatt
 
+*/
