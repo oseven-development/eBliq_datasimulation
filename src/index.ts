@@ -26,6 +26,6 @@ createConnection()
       myOrder.value = data[index].price
       i++
       await connection.mongoManager.save(myOrder)
-    }, Number(process.env.speed) || 3000)
+    }, Number(process.env.speed) || 400)
   })
   .catch(error => console.log('Error: ', error))
