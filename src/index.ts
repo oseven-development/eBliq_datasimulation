@@ -11,6 +11,13 @@ const defaultEngine = [
   { id: 'id-789', name: 'Versand', workload: 9 }
 ]
 
+const SSE_RESPONSE_HEADER = {
+  Connection: 'keep-alive',
+  'Content-Type': 'text/event-stream',
+  'Cache-Control': 'no-cache',
+  'X-Accel-Buffering': 'no'
+}
+
 appExp.get('/', (req: express.Request, res: express.Response) => {
   defaultEngine.map(engine => {
     appSim.pushEntitie(engine.id, new Engine(engine))
@@ -19,8 +26,12 @@ appExp.get('/', (req: express.Request, res: express.Response) => {
 })
 
 appExp.get('/start', (req: express.Request, res: express.Response) => {
-  appSim.start()
-  res.json({ index: 'index' })
+  res.writeHead(200, SSE_RESPONSE_HEADER)
+  defaultEngine.map(engine => {
+    appSim.pushEntitie(engine.id, new Engine(engine))
+  })
+  appSim.start(res)
+  // res.json({ index: 'index' })
 })
 
 appExp.listen(Number(process.env.port) || 8000, () => {
