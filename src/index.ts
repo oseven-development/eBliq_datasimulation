@@ -5,6 +5,9 @@ import Simulation from './Simulation'
 const appSim: Simulation = new Simulation()
 const appExp: express.Application = express()
 
+//TODO: User handling -> Connection entfernen wenn closed, etc -> siehe master branch oder
+//TODO: https://github.com/kljensen/node-sse-example/blob/master/app.js
+
 const defaultEngine = [
   { id: 'id-123', name: 'Druck', workload: 4 },
   { id: 'id-456', name: 'Pack', workload: 3 },
