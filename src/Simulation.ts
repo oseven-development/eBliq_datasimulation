@@ -1,31 +1,36 @@
-import { createConnection } from 'typeorm'
+import SimulationType from './Simulation.d'
 
-export default class Simulation {
-  theLoop: any
-  con: any
+class Simulation {
+  theLoop: NodeJS.Timeout
+  simulationsObjects: Map<String, Simulation>
   constructor() {
-    createConnection()
-      .then(async connection => {
-        this.con = connection
-      })
-      .catch(error => console.log(error))
+    this.simulationsObjects = new Map()
   }
 
-  run(ar: any) {
-    const t = ar.map((ar: any) => {
-      return new ar()
-    })
+  pushEntitie(id: String, entitie: any) {
+    this.simulationsObjects.set(id, entitie)
+  }
 
+  removeEntitie(id: String) {
+    this.simulationsObjects.delete(id)
+  }
+
+  start() {
     this.theLoop = setInterval(() => {
-      t.map((item: any) => {
+      this.simulationsObjects.forEach((item: any) => {
         if (item.simulate != undefined) {
-          item.simulate()
+          item.simulate().then(result => {
+            console.log(result)
+          })
         }
       })
-    }, 100)
+      console.log('------------------')
+    }, 1000)
   }
 
-  myStopFunction() {
+  stopp() {
     clearInterval(this.theLoop)
   }
 }
+
+export default Simulation

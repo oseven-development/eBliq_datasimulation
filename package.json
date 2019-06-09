@@ -4,19 +4,27 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
     "start": "ts-node -T --compiler typescript --project tsconfig.json ./src/index.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@types/node": "^11.13.5",
+    "express": "^4.17.1",
     "mongodb": "^3.2.3",
     "reflect-metadata": "^0.1.13",
     "sqlite3": "^4.0.6",
     "ts-node": "^8.1.0",
     "typeorm": "^0.2.16",
     "typescript": "^3.4.3"
+  },
+  "devDependencies": {
+    "@types/express": "^4.16.1",
+    "@types/jest": "^24.0.13",
+    "@types/node": "^11.13.13",
+    "jest": "^24.8.0",
+    "supertest": "^4.0.2",
+    "ts-jest": "^24.0.2"
   }
 }

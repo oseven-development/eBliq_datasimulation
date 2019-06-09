@@ -1,9 +1,10 @@
 declare class Simulation {
-  constructor(someParam?: Simulation)
-
-  someProperty: string[]
+  constructor()
+  theLoop: String
 
   simulate(): void
+
+  test(): Number
 }
 
 export = Simulation

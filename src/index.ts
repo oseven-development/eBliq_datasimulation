@@ -1,25 +1,22 @@
-import 'reflect-metadata'
-// import Simulation from './Simulation'
-// import { OBJA } from './simulation/'
-import { createConnection } from 'typeorm'
-import { Order } from './entity/Order'
+import * as express from 'express'
+import { Engine } from './entities/'
+import Simulation from './Simulation'
 
-// const x = async () => {
-//   //   const simu = new Simulation()
-//   //   simu.run([OBJA])
+const appSim: Simulation = new Simulation()
+const appExp: express.Application = express()
 
-//   //   setTimeout(() => {
-//   //     simu.myStopFunction()
-//   //   }, 5000)
-// x()
+appExp.get('/', (req: express.Request, res: express.Response) => {
+  appSim.pushEntitie(String(Math.random()), new Engine({}))
+  res.json({ index: 'index' })
+})
 
-createConnection()
-  .then(async connection => {
-    setInterval(async () => {
-      const myOrder = new Order()
-      myOrder.name = Math.random()
-      myOrder.value = Math.random()
-      await connection.mongoManager.save(myOrder)
-    }, Number(process.env.speed) || 1000)
-  })
-  .catch(error => console.log('Error: ', error))
+appExp.get('/start', (req: express.Request, res: express.Response) => {
+  appSim.start()
+  res.json({ index: 'index' })
+})
+
+appExp.listen(Number(process.env.port) || 8000, () => {
+  console.log(`server started at http://localhost:${process.env.port || 8000}`)
+})
+
+module.exports = appExp
