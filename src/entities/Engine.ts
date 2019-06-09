@@ -3,19 +3,24 @@ import Simulation from '../Simulation'
 import { getRandomInt, getRandomIntBetween } from '../lib'
 
 export default class Engine extends Simulation {
+  id: string
   name: string
   levelOfUse: number
   wearOfTheMachine: number
   fault: boolean
   idleMode: boolean
   manufacturedComponent: any
+  workload: number
   constructor(cfg) {
     super()
+    this.id = cfg.id
     this.idleMode = true
     this.wearOfTheMachine = 100
+    this.name = cfg.name || 'default'
+    this.workload = cfg.workload || 5
   }
   pickComponenten() {
-    if (this.idleMode === true && getRandomInt(10) > 1) {
+    if (this.idleMode === true && getRandomInt(10) > this.workload) {
       this.idleMode = false
       this.manufacturedComponent = { trips: 10, currentTrip: 0, wear: 5 }
     }
@@ -47,6 +52,7 @@ export default class Engine extends Simulation {
 
   exportValues() {
     return {
+      id: this.id,
       name: this.name,
       levelOfUse: this.levelOfUse,
       wearOfTheMachine: this.wearOfTheMachine,

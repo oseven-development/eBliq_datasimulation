@@ -5,8 +5,16 @@ import Simulation from './Simulation'
 const appSim: Simulation = new Simulation()
 const appExp: express.Application = express()
 
+const defaultEngine = [
+  { id: 'id-123', name: 'Druck', workload: 4 },
+  { id: 'id-456', name: 'Pack', workload: 3 },
+  { id: 'id-789', name: 'Versand', workload: 9 }
+]
+
 appExp.get('/', (req: express.Request, res: express.Response) => {
-  appSim.pushEntitie(String(Math.random()), new Engine({}))
+  defaultEngine.map(engine => {
+    appSim.pushEntitie(engine.id, new Engine(engine))
+  })
   res.json({ index: 'index' })
 })
 
