@@ -24,9 +24,10 @@ class Simulation {
             // console.log(result)
             i++
             const event = 'machineStream'
-            res.write(
-              `id: ${i}\nevent: ${event}\ndata: ${JSON.stringify(result)}\n\n`
-            )
+            res.write(`id: ${i}\n`)
+            res.write(`event: ${event}\n`)
+            res.write(`data: ${JSON.stringify(result)}`)
+            res.write(`\n\n`)
           })
         }
       })

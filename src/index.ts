@@ -1,4 +1,6 @@
 import * as express from 'express'
+import * as cors from 'cors'
+
 import { Engine } from './entities/'
 import Simulation from './Simulation'
 
@@ -14,12 +16,15 @@ const defaultEngine = [
   { id: 'id-789', name: 'Versand', workload: 9 }
 ]
 
+let clients = {}
+let clientId = 0
 const SSE_RESPONSE_HEADER = {
   Connection: 'keep-alive',
   'Content-Type': 'text/event-stream',
   'Cache-Control': 'no-cache',
   'X-Accel-Buffering': 'no'
 }
+appExp.use(cors())
 
 appExp.get('/', (req: express.Request, res: express.Response) => {
   defaultEngine.map(engine => {
@@ -29,6 +34,9 @@ appExp.get('/', (req: express.Request, res: express.Response) => {
 })
 
 appExp.get('/start', (req: express.Request, res: express.Response) => {
+  clients[clientId] = clientId
+  clientId++
+  console.log(clients)
   res.writeHead(200, SSE_RESPONSE_HEADER)
   defaultEngine.map(engine => {
     appSim.pushEntitie(engine.id, new Engine(engine))
