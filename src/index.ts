@@ -24,6 +24,7 @@ const SSE_RESPONSE_HEADER = {
   'Cache-Control': 'no-cache',
   'X-Accel-Buffering': 'no'
 }
+
 appExp.use(cors())
 
 appExp.get('/', (req: express.Request, res: express.Response) => {
@@ -34,15 +35,20 @@ appExp.get('/', (req: express.Request, res: express.Response) => {
 })
 
 appExp.get('/start', (req: express.Request, res: express.Response) => {
+  // res.writeHead(200, SSE_RESPONSE_HEADER)
+  defaultEngine.map(engine => {
+    appSim.pushEntitie(engine.id, new Engine(engine))
+  })
+  appSim.start()
+  res.json({ index: 'start' })
+})
+
+appExp.get('/connect', (req: express.Request, res: express.Response) => {
   clients[clientId] = clientId
   clientId++
   console.log(clients)
   res.writeHead(200, SSE_RESPONSE_HEADER)
-  defaultEngine.map(engine => {
-    appSim.pushEntitie(engine.id, new Engine(engine))
-  })
-  appSim.start(res)
-  // res.json({ index: 'index' })
+  appSim.sendSSEStream(res)
 })
 
 appExp.listen(Number(process.env.port) || 8000, () => {

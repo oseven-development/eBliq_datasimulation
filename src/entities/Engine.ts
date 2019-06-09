@@ -11,6 +11,7 @@ export default class Engine extends Simulation {
   idleMode: boolean
   manufacturedComponent: any
   workload: number
+  date: Date
   constructor(cfg) {
     super()
     this.id = cfg.id
@@ -19,6 +20,7 @@ export default class Engine extends Simulation {
     this.name = cfg.name || 'default'
     this.workload = cfg.workload || 5
   }
+
   pickComponenten() {
     if (this.idleMode === true && getRandomInt(10) > this.workload) {
       this.idleMode = false
@@ -54,6 +56,7 @@ export default class Engine extends Simulation {
     return {
       id: this.id,
       name: this.name,
+      date: this.date,
       levelOfUse: this.levelOfUse,
       wearOfTheMachine: this.wearOfTheMachine,
       fault: this.fault,
@@ -65,6 +68,7 @@ export default class Engine extends Simulation {
   simulate() {
     this.pickComponenten()
     this.manufactureTrip()
+    this.date = new Date()
     return new Promise((resolve, recect) => {
       resolve(this.exportValues())
     })
