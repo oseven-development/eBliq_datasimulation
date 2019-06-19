@@ -1,19 +1,17 @@
-import Simulation from '../Simulation'
-
 import { getRandomInt, getRandomIntBetween } from '../lib'
+import { Component } from './'
 
-export default class Engine extends Simulation {
+export default class Engine {
   id: string
   name: string
   levelOfUse: number
   wearOfTheMachine: number
   fault: boolean
   idleMode: boolean
-  manufacturedComponent: any
+  manufacturedComponent: Component | undefined
   workload: number
   date: Date
   constructor(cfg) {
-    super()
     this.id = cfg.id
     this.idleMode = true
     this.wearOfTheMachine = 100
@@ -21,36 +19,51 @@ export default class Engine extends Simulation {
     this.workload = cfg.workload || 5
   }
 
-  pickComponenten() {
-    if (this.idleMode === true && getRandomInt(10) > this.workload) {
-      this.idleMode = false
-      this.manufacturedComponent = { trips: 10, currentTrip: 0, wear: 5 }
-    }
+  setIdleMode(mode: boolean) {
+    this.idleMode = mode
   }
+
+  clearComponenten() {
+    this.manufacturedComponent = undefined
+  }
+
+  pickComponenten() {
+    this.manufacturedComponent = new Component()
+  }
+
+  calculateLevelOfUse() {}
 
   manufactureTrip() {
-    if (this.idleMode === false) {
-      if (
-        this.manufacturedComponent.trips ===
-        this.manufacturedComponent.currentTrip
-      ) {
-        this.startIdleMode()
+    if (this.manufacturedComponent) {
+      if (this.manufacturedComponent.isFinished()) {
+        this.setIdleMode(true)
+        this.clearComponenten()
       } else {
-        this.manufacturedComponent.currentTrip++
-        this.levelOfUse = getRandomIntBetween(10, 90)
+        this.manufacturedComponent.manufacturedTrip()
+        this.calculateLevelOfUse()
       }
     }
+
+    // if (
+    //   this.manufacturedComponent.trips ===
+    //   this.manufacturedComponent.currentTrip
+    // ) {
+    //   this.startIdleMode()
+    // } else {
+    //   this.manufacturedComponent.currentTrip++
+    //   this.levelOfUse = getRandomIntBetween(10, 90)
+    // }
   }
 
-  startIdleMode() {
-    if (this.wearOfTheMachine >= this.manufacturedComponent.wear) {
-      this.wearOfTheMachine =
-        this.wearOfTheMachine - this.manufacturedComponent.wear
-    }
-    this.levelOfUse = 0
-    this.manufacturedComponent = {}
-    this.idleMode = true
-  }
+  // startIdleMode() {
+  //   if (this.wearOfTheMachine >= this.manufacturedComponent.wear) {
+  //     this.wearOfTheMachine =
+  //       this.wearOfTheMachine - this.manufacturedComponent.wear
+  //   }
+  //   this.levelOfUse = 0
+  //   this.manufacturedComponent = {}
+  //   this.idleMode = true
+  // }
 
   exportValues() {
     return {
@@ -66,8 +79,13 @@ export default class Engine extends Simulation {
   }
 
   simulate() {
-    this.pickComponenten()
-    this.manufactureTrip()
+    if (this.idleMode === true && getRandomInt(10) > this.workload) {
+      this.setIdleMode(false)
+      this.pickComponenten()
+    }
+    if (this.idleMode === false && this.manufacturedComponent) {
+      this.manufactureTrip()
+    }
     this.date = new Date()
     return new Promise((resolve, recect) => {
       resolve(this.exportValues())

@@ -1,18 +1,28 @@
-import SimulationType from './Simulation.d'
 import * as express from 'express'
-// import EventEmitter from 'events'
+import { Engine } from './entities/'
 const EventEmitter = require('events')
 
 class MyEmitter extends EventEmitter {}
+
+const defaultEngine = [
+  { id: 'id-123', name: 'Druck', workload: 4 },
+  { id: 'id-456', name: 'Pack', workload: 3 },
+  { id: 'id-789', name: 'Versand', workload: 9 }
+]
 class Simulation {
   theLoop: NodeJS.Timeout
   simulationsObjects: Map<String, Simulation>
   sseID: number
   emitter: MyEmitter
+  isRunning: boolean
   constructor() {
     this.simulationsObjects = new Map()
     this.sseID = 1
     this.emitter = new MyEmitter()
+    this.isRunning = false
+    defaultEngine.map(engine => {
+      this.pushEntitie(engine.id, new Engine(engine))
+    })
   }
 
   pushEntitie(id: String, entitie: any) {
@@ -23,7 +33,9 @@ class Simulation {
     this.simulationsObjects.delete(id)
   }
 
-  start() {
+  // loop auf simulationsObjects und führe simulate aus
+  // emitte auf simulation-channel
+  run() {
     this.theLoop = setInterval(() => {
       this.simulationsObjects.forEach((item: any) => {
         if (item.simulate != undefined) {
@@ -35,6 +47,7 @@ class Simulation {
     }, 2000)
   }
 
+  // connecte auf simulation emitter und sende als SSE-stream
   sendSSEStream(res: express.Response) {
     this.emitter.on('simulation', result => {
       const event = 'machineStream'
@@ -46,8 +59,18 @@ class Simulation {
     })
   }
 
+  // call run damit simulations startet
+  start() {
+    if (!this.isRunning) {
+      this.run()
+      this.isRunning = true
+    }
+  }
+
+  // stopp intervall in der simulations liegt
   stopp() {
     clearInterval(this.theLoop)
+    this.isRunning = false
   }
 }
 

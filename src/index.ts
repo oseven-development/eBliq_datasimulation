@@ -1,7 +1,6 @@
 import * as express from 'express'
 import * as cors from 'cors'
 
-import { Engine } from './entities/'
 import Simulation from './Simulation'
 
 const appSim: Simulation = new Simulation()
@@ -10,14 +9,7 @@ const appExp: express.Application = express()
 //TODO: User handling -> Connection entfernen wenn closed, etc -> siehe master branch oder
 //TODO: https://github.com/kljensen/node-sse-example/blob/master/app.js
 
-const defaultEngine = [
-  { id: 'id-123', name: 'Druck', workload: 4 },
-  { id: 'id-456', name: 'Pack', workload: 3 },
-  { id: 'id-789', name: 'Versand', workload: 9 }
-]
-
-let clients = {}
-let clientId = 0
+// Set Corsheader
 const SSE_RESPONSE_HEADER = {
   Connection: 'keep-alive',
   'Content-Type': 'text/event-stream',
@@ -25,32 +17,32 @@ const SSE_RESPONSE_HEADER = {
   'X-Accel-Buffering': 'no'
 }
 
+// enable cors
 appExp.use(cors())
 
 appExp.get('/', (req: express.Request, res: express.Response) => {
-  defaultEngine.map(engine => {
-    appSim.pushEntitie(engine.id, new Engine(engine))
-  })
   res.json({ index: 'index' })
 })
 
+// start simulation
 appExp.get('/start', (req: express.Request, res: express.Response) => {
-  // res.writeHead(200, SSE_RESPONSE_HEADER)
-  defaultEngine.map(engine => {
-    appSim.pushEntitie(engine.id, new Engine(engine))
-  })
   appSim.start()
-  res.json({ index: 'start' })
+  res.json({ state: 'start' })
 })
 
+// stopp simulation
+appExp.get('/stopp', (req: express.Request, res: express.Response) => {
+  appSim.stopp()
+  res.json({ state: 'stopp' })
+})
+
+// build new SSE stream
 appExp.get('/connect', (req: express.Request, res: express.Response) => {
-  clients[clientId] = clientId
-  clientId++
-  console.log(clients)
   res.writeHead(200, SSE_RESPONSE_HEADER)
   appSim.sendSSEStream(res)
 })
 
+// start express
 appExp.listen(Number(process.env.port) || 8000, () => {
   console.log(`server started at http://localhost:${process.env.port || 8000}`)
 })

@@ -1,3 +1,4 @@
 import Engine from './Engine'
+import Component from './Component'
 
-export { Engine }
+export { Engine, Component }
