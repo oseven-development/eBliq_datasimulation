@@ -1,0 +1,13 @@
+{
+  "cluster": "ebliq",
+  "taskDefinition": "ebliq-datasimulation",
+  "count": 1,
+  "launchType": "FARGATE",
+  "networkConfiguration": {
+    "awsvpcConfiguration": {
+      "subnets": ["subnet-0bb25a582fa875128"],
+      "securityGroups": ["sg-02c92bc5fea3318a9"],
+      "assignPublicIp": "ENABLED"
+    }
+  }
+}

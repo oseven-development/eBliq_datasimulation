@@ -1,0 +1,38 @@
+{
+  "executionRoleArn": "arn:aws:iam::403039540759:role/ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/ebliq-datasimulation",
+          "awslogs-region": "eu-central-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "portMappings": [
+        {
+          "hostPort": 8000,
+          "protocol": "tcp",
+          "containerPort": 8000
+        }
+      ],
+      "cpu": 0,
+      "environment": [
+        {
+          "name": "port",
+          "value": "8000"
+        }
+      ],
+      "memory": 128,
+      "image": "403039540759.dkr.ecr.eu-central-1.amazonaws.com/ebliq-datasimulation",
+      "name": "simulation-app"
+    }
+  ],
+  "memory": "512",
+  "taskRoleArn": "arn:aws:iam::403039540759:role/ecsTaskExecutionRole",
+  "family": "ebliq-datasimulation",
+  "requiresCompatibilities": ["FARGATE"],
+  "networkMode": "awsvpc",
+  "cpu": "256"
+}

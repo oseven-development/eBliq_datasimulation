@@ -5,9 +5,9 @@ const EventEmitter = require('events')
 class MyEmitter extends EventEmitter {}
 
 const defaultEngine = [
-  { id: 'id-123', name: 'Druck', workload: 4 },
-  { id: 'id-456', name: 'Pack', workload: 3 },
-  { id: 'id-789', name: 'Versand', workload: 9 }
+  { id: 'id-123', name: 'Druck', workload: 10 }
+  // { id: 'id-456', name: 'Pack', workload: 10 },
+  // { id: 'id-789', name: 'Versand', workload: 10 }
 ]
 class Simulation {
   theLoop: NodeJS.Timeout
@@ -41,10 +41,23 @@ class Simulation {
         if (item.simulate != undefined) {
           item.simulate().then(result => {
             this.emitter.emit('simulation', result)
+            // console.log(result)
           })
         }
       })
-    }, 2000)
+    }, Number(process.env.SimulationSpeed) || 500)
+
+    // for (let i = 0; i <= 1000; i++) {
+    //   this.simulationsObjects.forEach(async (item: any) => {
+    //     if (item.simulate != undefined) {
+    //       await item.simulate().then(result => {
+    //         this.emitter.emit('simulation', result)
+    //         i++
+    //         // console.log(result)
+    //       })
+    //     }
+    //   })
+    // }
   }
 
   // connecte auf simulation emitter und sende als SSE-stream

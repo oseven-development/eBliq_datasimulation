@@ -1,0 +1,6 @@
+{
+  "Description": "Zugriff fuer ECS-Container",
+  "GroupName": "ecs-ebliq-datasimulation",
+  "VpcId": "vpc-0f23fa97a97aeb1b7",
+  "DryRun": false
+}

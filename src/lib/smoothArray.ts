@@ -2,7 +2,6 @@ export default function(values: number[], alpha: number): number[] {
   const weighted = average(values) * alpha
   const smoothed: number[] = []
   values.map((i: number, index: number) => {
-    console.log(values[index])
     const curr = values[index]
     const prev = smoothed[index - 1] || values[values.length - 1]
     const next = curr || values[0]

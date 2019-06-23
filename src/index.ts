@@ -6,6 +6,11 @@ import Simulation from './Simulation'
 const appSim: Simulation = new Simulation()
 const appExp: express.Application = express()
 
+const UPTIME: Date = new Date()
+const PORT: number = 8080
+
+// appSim.start()
+
 //TODO: User handling -> Connection entfernen wenn closed, etc -> siehe master branch oder
 //TODO: https://github.com/kljensen/node-sse-example/blob/master/app.js
 
@@ -21,7 +26,7 @@ const SSE_RESPONSE_HEADER = {
 appExp.use(cors())
 
 appExp.get('/', (req: express.Request, res: express.Response) => {
-  res.json({ index: 'index' })
+  res.json({ index: 'index', UPTIME })
 })
 
 // start simulation
@@ -43,8 +48,8 @@ appExp.get('/connect', (req: express.Request, res: express.Response) => {
 })
 
 // start express
-appExp.listen(Number(process.env.port) || 8000, () => {
-  console.log(`server started at http://localhost:${process.env.port || 8000}`)
+appExp.listen(Number(process.env.port) || PORT, () => {
+  console.log(`server started at http://localhost:${process.env.port || PORT}`)
 })
 
 module.exports = appExp

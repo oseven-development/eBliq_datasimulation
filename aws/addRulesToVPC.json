@@ -1,0 +1,8 @@
+{
+  "CidrIp": "0.0.0.0/0",
+  "GroupId": "sg-0db784abf8e7d7f99",
+  "FromPort": 8000,
+  "IpProtocol": "tcp",
+  "ToPort": 8000,
+  "DryRun": false
+}
