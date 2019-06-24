@@ -1,8 +1,7 @@
 import * as express from 'express'
-import { Engine } from './entities/'
-const EventEmitter = require('events')
-
-class MyEmitter extends EventEmitter {}
+import { Engine, OrderManager } from './entities/'
+import MyEmitter, { SimulationEmitter } from './lib/emitter'
+import { IRespond } from './Simulation.d'
 
 const defaultEngine = [
   { id: 'id-123', name: 'Druck', workload: 10 }
@@ -12,17 +11,16 @@ const defaultEngine = [
 class Simulation {
   theLoop: NodeJS.Timeout
   simulationsObjects: Map<String, Simulation>
-  sseID: number
-  emitter: MyEmitter
+  emitter: SimulationEmitter
   isRunning: boolean
   constructor() {
     this.simulationsObjects = new Map()
-    this.sseID = 1
-    this.emitter = new MyEmitter()
+    this.emitter = MyEmitter
     this.isRunning = false
     defaultEngine.map(engine => {
       this.pushEntitie(engine.id, new Engine(engine))
     })
+    this.pushEntitie('test', new OrderManager({}))
   }
 
   pushEntitie(id: String, entitie: any) {
@@ -39,10 +37,11 @@ class Simulation {
     this.theLoop = setInterval(() => {
       this.simulationsObjects.forEach((item: any) => {
         if (item.simulate != undefined) {
-          item.simulate().then(result => {
-            this.emitter.emit('simulation', result)
-            // console.log(result)
-          })
+          item.simulate()
+          // item.simulate().then(result => {
+          //   this.emitter.emit('simulation', result)
+          // console.log(result)
+          // })
         }
       })
     }, Number(process.env.SimulationSpeed) || 500)
@@ -62,13 +61,13 @@ class Simulation {
 
   // connecte auf simulation emitter und sende als SSE-stream
   sendSSEStream(res: express.Response) {
-    this.emitter.on('simulation', result => {
-      const event = 'machineStream'
-      res.write(`id: ${this.sseID}\n`)
-      res.write(`event: ${event}\n`)
-      res.write(`data: ${JSON.stringify(result)}`)
+    let sseID: number = 1
+    this.emitter.on('simulation', (result: IRespond<any>) => {
+      res.write(`id: ${sseID}\n`)
+      res.write(`event: ${result.stream}\n`)
+      res.write(`data: ${JSON.stringify(result.value)}`)
       res.write(`\n\n`)
-      this.sseID++
+      sseID++
     })
   }
 

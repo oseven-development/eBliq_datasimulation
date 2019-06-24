@@ -1,4 +1,4 @@
-declare class Simulation {
+export declare class Simulation {
   constructor()
   theLoop: String
 
@@ -7,4 +7,7 @@ declare class Simulation {
   test(): Number
 }
 
-export = Simulation
+export interface IRespond<T> {
+  stream: string
+  value: T
+}
