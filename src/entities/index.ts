@@ -1,4 +1,5 @@
 import Engine from './Engine'
 import Component from './Component'
+import OrderManager from './OrderManager'
 
-export { Engine, Component }
+export { Engine, Component, OrderManager }

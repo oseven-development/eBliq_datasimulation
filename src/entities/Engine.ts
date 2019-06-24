@@ -1,5 +1,7 @@
 import { getRandomInt, getRandomIntBetween } from '../lib'
+import MyEmitter, { SimulationEmitter } from '../lib/emitter'
 import { Component } from './'
+import { IRespond } from '../Simulation.d'
 
 interface returnValues {
   id: string
@@ -28,6 +30,7 @@ export default class Engine {
   manufacturedComponent: Component | undefined
   workload: number
   date: Date
+  emitter: SimulationEmitter
   constructor(cfg) {
     this.levelOfUse = 0
     this.id = cfg.id
@@ -36,6 +39,7 @@ export default class Engine {
     this.wearOfTheMachine = 100
     this.name = cfg.name || 'default'
     this.workload = cfg.workload || 5
+    this.emitter = MyEmitter
   }
 
   // Exporting Values to SSE
@@ -138,31 +142,32 @@ export default class Engine {
   }
 
   // simulate one trip
-  simulate(): Promise<returnValues> {
+  simulate(): void {
     this.date = new Date()
-    // console.log(this.exportValues())
-    return new Promise((resolve, recect) => {
-      this.calculateLevelOfUse()
-      this.possiblyDefective(this.wearOfTheMachine * 15)
-      if (this.fault.isFault) {
-        this.maintenance()
-      }
-      if (
-        this.idleMode === true &&
-        getRandomInt(10) <= this.workload &&
-        !this.fault.isFault
-      ) {
-        this.setIdleMode(false)
-        this.pickComponenten()
-      }
-      if (
-        this.idleMode === false &&
-        this.manufacturedComponent &&
-        !this.fault.isFault
-      ) {
-        this.manufactureTrip()
-      }
-      resolve(this.exportValues())
-    })
+    this.calculateLevelOfUse()
+    this.possiblyDefective(this.wearOfTheMachine * 15)
+    if (this.fault.isFault) {
+      this.maintenance()
+    }
+    if (
+      this.idleMode === true &&
+      getRandomInt(10) <= this.workload &&
+      !this.fault.isFault
+    ) {
+      this.setIdleMode(false)
+      this.pickComponenten()
+    }
+    if (
+      this.idleMode === false &&
+      this.manufacturedComponent &&
+      !this.fault.isFault
+    ) {
+      this.manufactureTrip()
+    }
+    const RESPOND: IRespond<returnValues> = {
+      stream: 'machineStream',
+      value: this.exportValues()
+    }
+    this.emitter.emit('simulation', RESPOND)
   }
 }

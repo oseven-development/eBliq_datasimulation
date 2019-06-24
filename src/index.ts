@@ -24,6 +24,7 @@ const SSE_RESPONSE_HEADER = {
 
 // enable cors
 appExp.use(cors())
+appSim.start()
 
 appExp.get('/', (req: express.Request, res: express.Response) => {
   res.json({ index: 'index', UPTIME })
