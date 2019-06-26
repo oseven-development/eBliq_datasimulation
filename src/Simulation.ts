@@ -1,30 +1,51 @@
 import * as express from 'express'
-import { Engine, OrderManager } from './entities/'
+import { Engine, OrderManager, IOrderManagerCfg as IOMCFG } from './entities/'
 import MyEmitter, { SimulationEmitter } from './lib/emitter'
-import { IRespond } from './Simulation.d'
 
-const defaultEngine = [
-  { id: 'id-123', name: 'Druck', workload: 10 }
-  // { id: 'id-456', name: 'Pack', workload: 10 },
+const defaultEngine: DefaultConfig[] = [
+  { type: 'Engine', id: 'id-123', cfg: { workload: 10, name: 'Druck' } },
+  { type: 'Engine', id: 'id-456', cfg: { workload: 10, name: 'Pack' } },
+  { type: 'OrderManager', id: '1', cfg: { name: 'Orders' } }
   // { id: 'id-789', name: 'Versand', workload: 10 }
 ]
+
 class Simulation {
   theLoop: NodeJS.Timeout
-  simulationsObjects: Map<String, Simulation>
+  simulationsObjects: Map<String, SimulationSkellet>
   emitter: SimulationEmitter
   isRunning: boolean
+
   constructor() {
     this.simulationsObjects = new Map()
     this.emitter = MyEmitter
     this.isRunning = false
-    defaultEngine.map(engine => {
-      this.pushEntitie(engine.id, new Engine(engine))
-    })
-    this.pushEntitie('test', new OrderManager({}))
+    this.addAllEntitie()
   }
 
-  pushEntitie(id: String, entitie: any) {
+  makeObj<T>(n: SimulationConstructable<T>, cfg: T) {
+    return new n(cfg)
+  }
+
+  pushEntitie(id: String, entitie: SimulationSkellet) {
     this.simulationsObjects.set(id, entitie)
+  }
+
+  addAllEntitie() {
+    defaultEngine.map((config: DefaultConfig) => {
+      const newCfg = { ...config.cfg, id: config.id }
+      switch (config.type) {
+        case 'Engine':
+          const EG = this.makeObj<{}>(Engine, newCfg)
+          this.pushEntitie(config.id, EG)
+          break
+        case 'OrderManager':
+          const OM = this.makeObj<IOMCFG>(OrderManager, newCfg)
+          this.pushEntitie(config.id, OM)
+          break
+        default:
+          break
+      }
+    })
   }
 
   removeEntitie(id: String) {
@@ -35,14 +56,12 @@ class Simulation {
   // emitte auf simulation-channel
   run() {
     this.theLoop = setInterval(() => {
-      this.simulationsObjects.forEach((item: any) => {
-        if (item.simulate != undefined) {
-          item.simulate()
-          // item.simulate().then(result => {
-          //   this.emitter.emit('simulation', result)
-          // console.log(result)
-          // })
-        }
+      this.simulationsObjects.forEach((item: SimulationSkellet) => {
+        item.simulate()
+        // item.simulate().then(result => {
+        //   this.emitter.emit('simulation', result)
+        // console.log(result)
+        // })
       })
     }, Number(process.env.SimulationSpeed) || 500)
 
@@ -87,3 +106,25 @@ class Simulation {
 }
 
 export default Simulation
+
+// Styles
+
+export interface SimulationSkellet {
+  simulate: Function
+  emitter: SimulationEmitter
+}
+
+interface SimulationConstructable<T> {
+  new (cfg: T): SimulationSkellet
+}
+
+export interface IRespond<T> {
+  stream: string
+  value: T
+}
+
+export interface DefaultConfig {
+  type: string
+  id: string
+  cfg: any
+}

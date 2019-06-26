@@ -1,4 +1,13 @@
-export default [
+export interface ICompany {
+  id: number
+  companyname: string
+  title: string
+  name: string
+  surename: string
+  size: string
+}
+
+const adresses: ICompany[] = [
   {
     id: 7397856,
     companyname: 'Hepp GmbH',
@@ -240,3 +249,4 @@ export default [
     size: 'mid'
   }
 ]
+export default adresses

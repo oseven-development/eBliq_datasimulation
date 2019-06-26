@@ -1,5 +1,5 @@
 import Engine from './Engine'
 import Component from './Component'
-import OrderManager from './OrderManager'
+import OrderManager, { IOrderManagerCfg } from './OrderManager'
 
-export { Engine, Component, OrderManager }
+export { Engine, Component, OrderManager, IOrderManagerCfg }
