@@ -66,30 +66,30 @@ const M1 = appSim.makeObj<{ name: string; id: string; workload: number }>(
   {
     id: 'id-123',
     name: 'Druck',
-    workload: 10
+    workload: 5
   }
 )
-appSim.pushEntitie('id1235', M1)
+appSim.pushEntitie('id123', M1)
 
 const M2 = appSim.makeObj<{ name: string; id: string; workload: number }>(
   Engine,
   {
-    id: 'id-123',
+    id: 'id-456',
     name: 'Pack',
-    workload: 10
+    workload: 1
   }
 )
-appSim.pushEntitie('id1234', M2)
+appSim.pushEntitie('id456', M2)
 
 const EG = appSim.makeObj<{ name: string; id: string; workload: number }>(
   Engine,
   {
-    id: 'id-123',
+    id: 'id-789',
     name: 'Versand',
     workload: 10
   }
 )
-appSim.pushEntitie('id123', EG)
+appSim.pushEntitie('id789', EG)
 
 // const EG2 = appSim.makeObj<{ id: string; name: string }>(OrderManager, {
 //   id: '1',
