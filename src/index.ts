@@ -2,8 +2,9 @@ import * as express from 'express'
 import * as cors from 'cors'
 
 import Simulation from './Simulation'
+import { Engine, OrderManager, ICfg } from './entities/'
 
-const appSim: Simulation = new Simulation()
+const appSim = new Simulation()
 const appExp: express.Application = express()
 
 const UPTIME: Date = new Date()
@@ -54,3 +55,44 @@ appExp.listen(Number(process.env.port) || PORT, () => {
 })
 
 module.exports = appExp
+
+const defaultEngine = [
+  { type: 'Engine', id: 'id-123', cfg: { workload: 10, name: 'Druck' } },
+  { type: 'Engine', id: 'id-456', cfg: { workload: 10, name: 'Pack' } }
+  // { id: 'id-789', name: 'Versand', workload: 10 }
+]
+const M1 = appSim.makeObj<{ name: string; id: string; workload: number }>(
+  Engine,
+  {
+    id: 'id-123',
+    name: 'Druck',
+    workload: 10
+  }
+)
+appSim.pushEntitie('id1235', M1)
+
+const M2 = appSim.makeObj<{ name: string; id: string; workload: number }>(
+  Engine,
+  {
+    id: 'id-123',
+    name: 'Pack',
+    workload: 10
+  }
+)
+appSim.pushEntitie('id1234', M2)
+
+const EG = appSim.makeObj<{ name: string; id: string; workload: number }>(
+  Engine,
+  {
+    id: 'id-123',
+    name: 'Versand',
+    workload: 10
+  }
+)
+appSim.pushEntitie('id123', EG)
+
+// const EG2 = appSim.makeObj<{ id: string; name: string }>(OrderManager, {
+//   id: '1',
+//   name: 'Orders'
+// })
+// appSim.pushEntitie('id1234', EG2)

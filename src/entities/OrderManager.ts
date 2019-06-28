@@ -3,26 +3,30 @@ import {
   getRandomIntBetween,
   getRandomIntBetweenIncreasing
 } from '../lib'
-import MyEmitter, { SimulationEmitter } from '../lib/emitter'
 
-import Simulation, { IRespond, SimulationSkellet } from '../Simulation'
+import Simulation, { SimulationSkellet } from '../Simulation'
 
-import Companys, { ICompany } from '../../dataset/companys'
+import Companys, { ICompany } from '../dataset/companys'
 
-export interface IOrderManagerCfg {
+export interface ICfg {
   id: string
   name: string
 }
-export default class OrderManage implements SimulationSkellet {
+export interface IRespond {
+  stream: string
+  // @FIXME delete any!
+  value: MyOrder[] | [] | any
+}
+export default class OrderManage extends Simulation<IRespond>
+  implements SimulationSkellet {
   private id: string
   private name: string
   private RESPOND: MyOrder[]
-  emitter: SimulationEmitter
   private CompanyLength: number
-  constructor(cfg: IOrderManagerCfg) {
+  constructor(cfg: ICfg) {
+    super()
     this.id = cfg.id
     this.name = cfg.name || 'default'
-    this.emitter = MyEmitter
     this.RESPOND = []
     this.CompanyLength = Companys.length
   }
@@ -44,19 +48,26 @@ export default class OrderManage implements SimulationSkellet {
 
     resp.map(params => {})
 
-    this.RESPOND.push({ name: '1' })
+    // this.RESPOND.push({ name: '1' })
   }
 
   private exportValues() {}
 
   simulate(): void {
-    const RESPOND: IRespond<MyOrder[] | []> = {
+    const RESPOND: IRespond = {
       stream: 'order',
       value: [{ name: 'max' }, { name: 'alex' }]
     }
     if (getRandomInt(10) > 8) {
       this.emitter.emit('simulation', RESPOND)
     }
+  }
+}
+
+class xxx extends Simulation<{ stream: string; value: { name: string } }>
+  implements SimulationSkellet {
+  simulate() {
+    this.publish({ stream: 'a', value: {} })
   }
 }
 

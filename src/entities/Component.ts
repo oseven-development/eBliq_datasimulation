@@ -10,29 +10,29 @@ interface Part {
 }
 
 const Parts: Part[] = [
-  {
-    name: 'Teil A',
-    trips: 10,
-    currentTrip: 0,
-    wear: 5,
-    minWorkload: 5,
-    maxWorkload: 50
-  },
-  {
-    name: 'Teil B',
-    trips: 10,
-    currentTrip: 0,
-    wear: 5,
-    minWorkload: 40,
-    maxWorkload: 70
-  },
+  // {
+  //   name: 'Teil A',
+  //   trips: 10,
+  //   currentTrip: 0,
+  //   wear: 5,
+  //   minWorkload: 5,
+  //   maxWorkload: 50
+  // },
+  // {
+  //   name: 'Teil B',
+  //   trips: 10,
+  //   currentTrip: 0,
+  //   wear: 5,
+  //   minWorkload: 40,
+  //   maxWorkload: 70
+  // },
   {
     name: 'Teil C',
     trips: 10,
     currentTrip: 0,
     wear: 5,
-    minWorkload: 30,
-    maxWorkload: 60
+    minWorkload: 70,
+    maxWorkload: 100
   }
 ]
 
