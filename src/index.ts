@@ -1,13 +1,9 @@
 import * as express from 'express'
 import * as cors from 'cors'
 import Simulation from './Simulation'
-import { Engine, IEngineConfig, OrderManager } from './entities/'
+import { Engine, IEngineConfig, OrderManager, IOrderManager } from './entities/'
 
 require('dotenv').config()
-
-if (Boolean('')) {
-  console.log('object')
-}
 
 const appSim = new Simulation()
 const appExp: express.Application = express()
@@ -45,8 +41,19 @@ appExp.get('/stopp', (req: express.Request, res: express.Response) => {
   res.json({ state: 'stopp' })
 })
 
+const map = new Map()
 // build new SSE stream
 appExp.get('/connect', (req: express.Request, res: express.Response) => {
+  const id = Math.random()
+  appSim.start()
+  map.set(id, req)
+  req.on('close', function() {
+    map.delete(id)
+    if (map.size === 0) {
+      appSim.stopp()
+      console.log('STOPPP')
+    }
+  })
   res.writeHead(200, SSE_RESPONSE_HEADER)
   appSim.sendSSEStream(res)
 })
@@ -75,33 +82,27 @@ const defaultEngine: IEngineConfig[] = [
     id: 'id-456',
     name: 'Pack',
     workload: 5,
-    absolutTempLimit: 150,
-    damageTempLimit: 90,
-    heathboost: 5,
-    tempIncrease: 9,
-    compensationLevel: [70, 90, 80],
-    tempDecreasePerTick: 5,
+
+    absolutTempLimit: 200,
+    damageTempLimit: 150,
+    heathboost: 10,
+    tempIncrease: 2,
+    compensationLevel: [70, 70, 80],
+    tempDecreasePerTick: 10,
     AIEnabled: false
-    // absolutTempLimit: 200,
-    // damageTempLimit: 150,
-    // heathboost: 10,
-    // tempIncrease: 2,
-    // compensationLevel: [70, 70, 80],
-    // tempDecreasePerTick: 10,
-    // AIEnabled: false
+  },
+  {
+    id: 'id-789',
+    name: 'Versand',
+    workload: 7,
+    absolutTempLimit: 100,
+    damageTempLimit: 70,
+    heathboost: 8,
+    tempIncrease: 2,
+    compensationLevel: [70, 90, 80],
+    tempDecreasePerTick: 3,
+    AIEnabled: false
   }
-  // {
-  //   id: 'id-789',
-  //   name: 'Versand',
-  //   workload: 7,
-  //   absolutTempLimit: 100,
-  //   damageTempLimit: 70,
-  //   heathboost: 8,
-  //   tempIncrease: 2,
-  //   compensationLevel: [70, 90, 80],
-  //   tempDecreasePerTick: 3,
-  //   AIEnabled: false
-  // }
 ]
 
 defaultEngine.map(myEngine => {
@@ -109,8 +110,9 @@ defaultEngine.map(myEngine => {
   appSim.pushEntitie(myEngine.id, M1)
 })
 
-// const EG2 = appSim.makeObj<{ id: string; name: string }>(OrderManager, {
-//   id: '1',
-//   name: 'Orders'
-// })
-// appSim.pushEntitie('id1234', EG2)
+const EG2 = appSim.makeObj<IOrderManager>(OrderManager, {
+  id: '1',
+  name: 'Orders',
+  workload: 2
+})
+appSim.pushEntitie('id-1', EG2)

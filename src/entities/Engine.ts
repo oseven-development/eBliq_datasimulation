@@ -134,7 +134,7 @@ export default class Engine extends Simulation<IRespond>
 
   private maximumLoadWithoutDamage(): boolean {
     const diff = this.config.damageTempLimit - this.conditionMachine()
-    console.log(diff)
+
     if (diff <= 30) {
       return true
     } else {
@@ -163,8 +163,8 @@ export default class Engine extends Simulation<IRespond>
       }
       const up = (lou * tempIncrease) / y
 
-      console.log(`befor up: ${this.temperature}`)
-      console.log(`amount up: ${up - this.config.tempDecreasePerTick}`)
+      // console.log(`befor up: ${this.temperature}`)
+      // console.log(`amount up: ${up - this.config.tempDecreasePerTick}`)
       this.temperature += up
     }
   }
@@ -263,13 +263,13 @@ export default class Engine extends Simulation<IRespond>
       this.possiblyDefective()
     }
 
-    console.log(`NAME: ${this.config.name}`)
-    console.log(`levelOfUse: ${this.levelOfUse}`)
-    console.log(`temperature: ${this.temperature}`)
-    console.log(`wearOfTheMachine: ${this.wearOfTheMachine}`)
-    console.log(`fault: ${this.fault.isFault}`)
-    console.log(`idle: ${this.idleMode}`)
-    console.log('--------------------------')
+    // console.log(`NAME: ${this.config.name}`)
+    // console.log(`levelOfUse: ${this.levelOfUse}`)
+    // console.log(`temperature: ${this.temperature}`)
+    // console.log(`wearOfTheMachine: ${this.wearOfTheMachine}`)
+    // console.log(`fault: ${this.fault.isFault}`)
+    // console.log(`idle: ${this.idleMode}`)
+    // console.log('--------------------------')
 
     this.publish({
       stream: 'machineStream',

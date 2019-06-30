@@ -7,27 +7,40 @@ import {
 import Simulation, { SimulationSkellet } from '../Simulation'
 
 import Companys, { ICompany } from '../dataset/companys'
+import Articels, { IArticel } from '../dataset/articels'
 
-export interface ICfg {
+const util = require('util')
+
+// Types
+export interface IOrderManager {
   id: string
   name: string
+  workload: number
 }
 export interface IRespond {
   stream: string
   // @FIXME delete any!
-  value: MyOrder[] | [] | any
+  value: IMyOrder[]
 }
+
+interface IMyOrder {
+  company: ICompany
+  products: IProducts[]
+}
+interface IProducts {
+  name: string
+  price: number
+  quantity: number
+}
+
 export default class OrderManage extends Simulation<IRespond>
   implements SimulationSkellet {
-  private id: string
-  private name: string
-  private RESPOND: MyOrder[]
+  private config: IOrderManager
+
   private CompanyLength: number
-  constructor(cfg: ICfg) {
+  constructor(cfg: IOrderManager) {
     super()
-    this.id = cfg.id
-    this.name = cfg.name || 'default'
-    this.RESPOND = []
+    this.config = cfg
     this.CompanyLength = Companys.length
   }
 
@@ -35,47 +48,91 @@ export default class OrderManage extends Simulation<IRespond>
     return Companys[getRandomInt(this.CompanyLength)]
   }
 
+  private pickArticleSet(company: ICompany): IProducts[] {
+    let quantity
+    switch (company.size) {
+      case 'small':
+        quantity = getRandomInt(10)
+        break
+      case 'mid':
+        quantity = getRandomInt(30)
+        break
+      case 'big':
+        quantity = getRandomInt(50)
+        break
+    }
+
+    let picks: number = 0
+    let result: IProducts[] = []
+    while (quantity >= picks) {
+      const q = getRandomIntBetween(1, 4)
+      picks += q
+
+      const q2 = getRandomInt(10)
+      switch (true) {
+        case q2 < 2:
+          result = this.pickArticle('low', result, q)
+          break
+        case q2 < 5:
+          result = this.pickArticle('mid', result, q)
+          break
+        default:
+          result = this.pickArticle('high', result, q)
+          break
+      }
+    }
+    return result
+  }
+
+  private pickArticle(
+    level: 'low' | 'mid' | 'high',
+    result: IProducts[],
+    q: number
+  ): IProducts[] {
+    const articleTree = Articels[level][getRandomInt(Articels[level].length)]
+    const artikel =
+      articleTree.products[getRandomInt(articleTree.products.length)]
+    let exist = false
+    if (result.length !== 0) {
+      result.map((items, index) => {
+        if (items.name === artikel.name) {
+          result[index].quantity += q
+          exist = true
+        }
+      })
+    }
+    if (!exist) {
+      result.push({ quantity: q, ...artikel })
+    }
+    return result
+  }
+
   private createOrders() {
-    const resp: { company: ICompany }[] = []
+    const resp: { company: ICompany; products: IProducts[] }[] = []
 
     const valueOfOrders = getRandomIntBetweenIncreasing({
       num: getRandomInt(100),
       out_max: 10
     })
     for (let i = 0; i <= valueOfOrders; i++) {
-      resp.push({ company: this.pickRandomCompany() })
+      const company = this.pickRandomCompany()
+      const products = this.pickArticleSet(company)
+      resp.push({
+        company,
+        products
+      })
     }
-
-    resp.map(params => {})
-
-    // this.RESPOND.push({ name: '1' })
-  }
-
-  private exportValues() {}
-
-  simulate(): void {
     const RESPOND: IRespond = {
       stream: 'order',
-      value: [{ name: 'max' }, { name: 'alex' }]
+      value: resp
     }
-    if (getRandomInt(10) > 8) {
-      this.emitter.emit('simulation', RESPOND)
+    // console.log(util.inspect(RESPOND, false, null, true /* enable colors */))
+    this.publish(RESPOND)
+  }
+
+  simulate(): void {
+    if (this.config.workload > getRandomInt(10)) {
+      this.createOrders()
     }
   }
 }
-
-class xxx extends Simulation<{ stream: string; value: { name: string } }>
-  implements SimulationSkellet {
-  simulate() {
-    this.publish({ stream: 'a', value: {} })
-  }
-}
-
-// Types
-
-interface MyOrder {
-  company: ICompany
-  products: Products[]
-}
-
-interface Products {}
