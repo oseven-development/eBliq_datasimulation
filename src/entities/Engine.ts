@@ -3,18 +3,19 @@ import MyEmitter, { SimulationEmitter } from '../lib/emitter'
 import { Component } from './'
 import Simulation, { SimulationSkellet } from '../Simulation'
 
-const CONFIG = {
-  tempLimit: 100,
-  heathboost: 8,
-  tempIncrease: 5,
-  tempDecrease: 3
-}
-
-export interface ICfg {
+export interface IEngineConfig {
   id: string
   name: string
   workload: number
+  absolutTempLimit: number
+  damageTempLimit: number
+  compensationLevel: number[]
+  heathboost: number
+  tempIncrease: number
+  tempDecreasePerTick: number
+  AIEnabled: boolean
 }
+
 export interface IRespond {
   stream: string
   value: returnValues
@@ -22,39 +23,33 @@ export interface IRespond {
 
 export default class Engine extends Simulation<IRespond>
   implements SimulationSkellet {
-  id: string
-  name: string
-  levelOfUse: number
-  wearOfTheMachine: number
-  fault: faultLevel
-  idleMode: boolean
-  manufacturedComponent: Component | undefined
-  workload: number
-  temperature: number
-  date: Date
-  constructor(cfg: ICfg) {
+  config: IEngineConfig
+
+  levelOfUse: number = 0
+  idleMode: boolean = true
+  wearOfTheMachine: number = 100
+  fault: faultLevel = { isFault: false, ticksToRemain: 30, currenTick: 0 }
+  temperature: number = 30
+  componentToBeManufactured: Component | undefined
+  manufacturedParts: object
+  constructor(cfg: IEngineConfig) {
     super()
-    this.id = cfg.id
-    this.name = cfg.name || 'default'
-    this.workload = cfg.workload || 5
-    this.levelOfUse = 0
-    this.idleMode = true
-    this.fault = { isFault: false, ticksToRemain: 10, currenTick: 0 }
-    this.wearOfTheMachine = 100
-    this.temperature = 30
+    this.config = cfg
+    this.manufacturedParts = {}
   }
 
   // Exporting Values to SSE
   private exportValues(): returnValues {
     return {
-      id: this.id,
-      name: this.name,
-      date: this.date,
+      id: this.config.id,
+      name: this.config.name,
+      date: new Date(),
       levelOfUse: this.levelOfUse,
       wearOfTheMachine: this.wearOfTheMachine,
       fault: this.fault,
       idleMode: this.idleMode,
-      temperature: this.temperature
+      temperature: this.temperature,
+      manufacturedParts: this.manufacturedParts
       // manufacturedComponent: this.manufacturedComponent
     }
   }
@@ -65,35 +60,52 @@ export default class Engine extends Simulation<IRespond>
   }
 
   private clearComponenten(): void {
-    delete this.manufacturedComponent
+    if (this.componentToBeManufactured) {
+      const name = this.componentToBeManufactured.getName()
+      if (name in this.manufacturedParts) {
+        this.manufacturedParts[name] += 1
+      } else {
+        this.manufacturedParts[name] = 1
+      }
+    }
+
+    delete this.componentToBeManufactured
     // if (getRandomInt(10) >= 8) {
     //   this.wearOfTheMachine = this.wearOfTheMachine - 3
     // }
   }
 
   private pickComponenten(): void {
-    this.manufacturedComponent = new Component()
+    this.componentToBeManufactured = new Component()
   }
 
   private setFaultMode(mode: boolean): void {
     this.fault.isFault = mode
   }
 
-  // set state of Usage
   private calculateLevelOfUse(): void {
-    if (this.manufacturedComponent) {
-      const Performance = this.manufacturedComponent.getPerfomance()
-      const Distance = this.levelOfUse - Performance
-      this.calculateHeat()
-      if (Math.abs(Distance) <= 5) {
-        this.levelOfUse = Performance
+    const { heathboost, AIEnabled } = this.config
+    const { levelOfUse } = this
+    const Boost = 5
+    let maxWorkload
+    if (this.componentToBeManufactured) {
+      // && this.maximumLoadWithoutDamage()
+      if (AIEnabled && this.maximumLoadWithoutDamage()) {
+        this.publish({
+          stream: 'AI',
+          value: {
+            maschineID: this.config.id,
+            message: 'throttle machine to prevent damage.'
+          }
+        })
+        maxWorkload = this.levelOfUse -= 10
+        //maxWorkload = this.componentToBeManufactured.getMaxWorkload()
+      } else {
+        maxWorkload = this.componentToBeManufactured.getMaxWorkload()
       }
-      if (Math.sign(Distance) === -1) {
-        this.levelOfUse += 5
-        this.temperature += CONFIG.heathboost
-      }
-      if (Math.sign(Distance) === (1 || 0)) {
-        this.levelOfUse -= 5
+
+      if (maxWorkload >= levelOfUse) {
+        this.IncreaseLevelOfUse(Boost)
       }
     } else {
       if (this.levelOfUse >= 5) {
@@ -102,38 +114,92 @@ export default class Engine extends Simulation<IRespond>
       } else {
         this.levelOfUse = 0
       }
-      if (this.temperature >= 30) {
-        this.temperature -= 5
-        this.temperature.toFixed(2)
+    }
+  }
+
+  private IncreaseLevelOfUse(Boost: number): void {
+    const { levelOfUse } = this
+    if (this.componentToBeManufactured) {
+      const maxWorkload = this.componentToBeManufactured.getMaxWorkload()
+      if (
+        maxWorkload > levelOfUse &&
+        Math.abs(maxWorkload - levelOfUse) > Boost
+      ) {
+        this.levelOfUse += Boost
       } else {
-        this.temperature = 30
+        this.levelOfUse = maxWorkload
       }
     }
   }
 
-  private calculateHeat(): void {
-    if (this.temperature >= CONFIG.tempLimit) {
-      if (200 - this.temperature > 20) {
-        this.wearOfTheMachine -= 1
-      } else {
-        this.wearOfTheMachine -= 3
-      }
-    }
-    if (this.temperature > this.levelOfUse) {
-      this.temperature -= CONFIG.tempDecrease
+  private maximumLoadWithoutDamage(): boolean {
+    const diff = this.config.damageTempLimit - this.conditionMachine()
+    console.log(diff)
+    if (diff <= 30) {
+      return true
     } else {
-      this.temperature += CONFIG.tempIncrease
+      return false
+    }
+  }
+
+  private calculateHeat(): void {
+    // console.log(`befor decrese: ${this.temperature}`)
+    this.decreaseTemp()
+    const { tempIncrease, compensationLevel } = this.config
+    const lou = this.levelOfUse
+    let y: number
+
+    if (this.idleMode !== true) {
+      switch (true) {
+        case lou < 33:
+          y = compensationLevel[0]
+          break
+        case lou < 66:
+          y = compensationLevel[1]
+          break
+        default:
+          y = compensationLevel[2]
+          break
+      }
+      const up = (lou * tempIncrease) / y
+
+      console.log(`befor up: ${this.temperature}`)
+      console.log(`amount up: ${up - this.config.tempDecreasePerTick}`)
+      this.temperature += up
+    }
+  }
+
+  private decreaseTemp(): void {
+    if (this.temperature > 30) {
+      this.temperature -= this.config.tempDecreasePerTick
+      this.temperature.toFixed(2)
+    } else {
+      this.temperature = 30
+    }
+  }
+
+  private calculateWear(): void {
+    const { damageTempLimit } = this.config
+    if (damageTempLimit <= this.temperature) {
+      this.wearOfTheMachine -= 2
     }
   }
 
   // set one trip
   private manufactureTrip(): void {
-    if (this.manufacturedComponent) {
-      if (this.manufacturedComponent.isFinished()) {
+    const { workload } = this.config
+
+    if (this.componentToBeManufactured) {
+      if (this.componentToBeManufactured.isFinished()) {
         this.setIdleMode(true)
         this.clearComponenten()
       } else {
-        this.manufacturedComponent.manufacturedTrip()
+        this.componentToBeManufactured.manufacturedTrip(this.levelOfUse)
+      }
+    } else {
+      if (getRandomInt(10) <= workload) {
+        this.setIdleMode(false)
+        this.pickComponenten()
       }
     }
   }
@@ -145,6 +211,13 @@ export default class Engine extends Simulation<IRespond>
     this.wearOfTheMachine = 0
     this.levelOfUse = 0
     this.temperature = 30
+    this.publish({
+      stream: 'notification',
+      value: {
+        maschineID: this.config.id,
+        message: 'The machine has been shut down for maintenance.'
+      }
+    })
   }
 
   private setEngineToWorkingMode(): void {
@@ -154,14 +227,20 @@ export default class Engine extends Simulation<IRespond>
   }
 
   private possiblyDefective(): void {
-    const x = (this.temperature * this.levelOfUse) / this.wearOfTheMachine
-    console.log(x)
+    const { temperature, levelOfUse, config } = this
+    const { absolutTempLimit } = config
+
     if (
-      (this.temperature * this.levelOfUse) / this.wearOfTheMachine > 110 &&
-      this.levelOfUse !== 0
+      (this.conditionMachine() > absolutTempLimit && levelOfUse !== 0) ||
+      config.absolutTempLimit <= temperature
     ) {
       this.setEngineToFaultMode()
     }
+  }
+
+  private conditionMachine(): number {
+    const { temperature, levelOfUse, wearOfTheMachine } = this
+    return (temperature * levelOfUse) / wearOfTheMachine
   }
 
   private maintenance() {
@@ -174,41 +253,28 @@ export default class Engine extends Simulation<IRespond>
 
   // simulate one trip
   simulate(): void {
-    this.date = new Date()
     if (this.fault.isFault) {
       this.maintenance()
     } else {
       this.calculateLevelOfUse()
+      this.calculateHeat()
+      this.calculateWear()
+      this.manufactureTrip()
       this.possiblyDefective()
     }
 
-    if (
-      this.idleMode === true &&
-      getRandomInt(9) <= this.workload &&
-      !this.fault.isFault
-    ) {
-      this.setIdleMode(false)
-      this.pickComponenten()
-    }
-    if (
-      this.idleMode === false &&
-      this.manufacturedComponent &&
-      !this.fault.isFault
-    ) {
-      this.manufactureTrip()
-    }
-    const RESPOND: IRespond = {
-      stream: 'machineStream',
-      value: this.exportValues()
-      // value: this.exportValues()
-    }
+    console.log(`NAME: ${this.config.name}`)
     console.log(`levelOfUse: ${this.levelOfUse}`)
     console.log(`temperature: ${this.temperature}`)
     console.log(`wearOfTheMachine: ${this.wearOfTheMachine}`)
     console.log(`fault: ${this.fault.isFault}`)
+    console.log(`idle: ${this.idleMode}`)
     console.log('--------------------------')
-    // console.log(RESPOND)
-    this.emitter.emit('simulation', RESPOND)
+
+    this.publish({
+      stream: 'machineStream',
+      value: this.exportValues()
+    })
   }
 }
 
@@ -224,6 +290,7 @@ interface returnValues {
   idleMode: boolean
   temperature: number
   manufacturedComponent?: Component | undefined
+  manufacturedParts: object
 }
 
 interface faultLevel {

@@ -1,16 +1,19 @@
 import * as express from 'express'
 import * as cors from 'cors'
-
 import Simulation from './Simulation'
-import { Engine, OrderManager, ICfg } from './entities/'
+import { Engine, IEngineConfig, OrderManager } from './entities/'
+
+require('dotenv').config()
+
+if (Boolean('')) {
+  console.log('object')
+}
 
 const appSim = new Simulation()
 const appExp: express.Application = express()
 
 const UPTIME: Date = new Date()
 const PORT: number = 8080
-
-// appSim.start()
 
 //TODO: User handling -> Connection entfernen wenn closed, etc -> siehe master branch oder
 //TODO: https://github.com/kljensen/node-sse-example/blob/master/app.js
@@ -25,7 +28,6 @@ const SSE_RESPONSE_HEADER = {
 
 // enable cors
 appExp.use(cors())
-appSim.start()
 
 appExp.get('/', (req: express.Request, res: express.Response) => {
   res.json({ index: 'index', UPTIME })
@@ -56,40 +58,56 @@ appExp.listen(Number(process.env.port) || PORT, () => {
 
 module.exports = appExp
 
-const defaultEngine = [
-  { type: 'Engine', id: 'id-123', cfg: { workload: 10, name: 'Druck' } },
-  { type: 'Engine', id: 'id-456', cfg: { workload: 10, name: 'Pack' } }
-  // { id: 'id-789', name: 'Versand', workload: 10 }
-]
-const M1 = appSim.makeObj<{ name: string; id: string; workload: number }>(
-  Engine,
+const defaultEngine: IEngineConfig[] = [
   {
     id: 'id-123',
     name: 'Druck',
-    workload: 5
-  }
-)
-appSim.pushEntitie('id123', M1)
-
-const M2 = appSim.makeObj<{ name: string; id: string; workload: number }>(
-  Engine,
+    workload: 5,
+    absolutTempLimit: 150,
+    damageTempLimit: 90,
+    heathboost: 5,
+    tempIncrease: 9,
+    compensationLevel: [70, 90, 80],
+    tempDecreasePerTick: 5,
+    AIEnabled: true
+  },
   {
     id: 'id-456',
     name: 'Pack',
-    workload: 1
+    workload: 5,
+    absolutTempLimit: 150,
+    damageTempLimit: 90,
+    heathboost: 5,
+    tempIncrease: 9,
+    compensationLevel: [70, 90, 80],
+    tempDecreasePerTick: 5,
+    AIEnabled: false
+    // absolutTempLimit: 200,
+    // damageTempLimit: 150,
+    // heathboost: 10,
+    // tempIncrease: 2,
+    // compensationLevel: [70, 70, 80],
+    // tempDecreasePerTick: 10,
+    // AIEnabled: false
   }
-)
-appSim.pushEntitie('id456', M2)
+  // {
+  //   id: 'id-789',
+  //   name: 'Versand',
+  //   workload: 7,
+  //   absolutTempLimit: 100,
+  //   damageTempLimit: 70,
+  //   heathboost: 8,
+  //   tempIncrease: 2,
+  //   compensationLevel: [70, 90, 80],
+  //   tempDecreasePerTick: 3,
+  //   AIEnabled: false
+  // }
+]
 
-const EG = appSim.makeObj<{ name: string; id: string; workload: number }>(
-  Engine,
-  {
-    id: 'id-789',
-    name: 'Versand',
-    workload: 10
-  }
-)
-appSim.pushEntitie('id789', EG)
+defaultEngine.map(myEngine => {
+  const M1 = appSim.makeObj<IEngineConfig>(Engine, myEngine)
+  appSim.pushEntitie(myEngine.id, M1)
+})
 
 // const EG2 = appSim.makeObj<{ id: string; name: string }>(OrderManager, {
 //   id: '1',

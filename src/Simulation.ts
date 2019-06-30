@@ -4,50 +4,29 @@ import MyEmitter, { SimulationEmitter } from './lib/emitter'
 
 export default class Simulation<R extends IRespond> {
   private theLoop: NodeJS.Timeout
-  private simulationsObjects: Map<String, SimulationSkellet>
-  public emitter: SimulationEmitter
-  private isRunning: boolean
+  private simulationsObjects: Map<String, SimulationSkellet> = new Map()
+  private isRunning: boolean = false
+  emitter: SimulationEmitter = MyEmitter
 
   constructor() {
-    this.simulationsObjects = new Map()
-    this.emitter = MyEmitter
-    this.isRunning = false
-    // this.addAllEntitie()
+    process.env.autostart === 'true' ? this.start() : ''
   }
 
-  public makeObj<T>(n: SimulationConstructable<T>, cfg: T) {
+  makeObj<T>(n: SimulationConstructable<T>, cfg: T) {
     return new n(cfg)
   }
 
-  public pushEntitie(id: String, entitie: SimulationSkellet) {
+  pushEntitie(id: String, entitie: SimulationSkellet) {
     this.simulationsObjects.set(id, entitie)
   }
 
-  // addAllEntitie() {
-  //   defaultEngine.map((config: DefaultConfig) => {
-  //     const newCfg = { ...config.cfg, id: config.id }
-  //     switch (config.type) {
-  //       case 'Engine':
-  //         // const EG = this.makeObj<{}>(Engine, newCfg)
-  //         // this.pushEntitie(config.id, EG)
-  //         break
-  //       case 'OrderManager':
-  //         // const OM = this.makeObj<IOMCFG>(OrderManager, newCfg)
-  //         // this.pushEntitie(config.id, OM)
-  //         break
-  //       default:
-  //         break
-  //     }
-  //   })
-  // }
-
-  private removeEntitie(id: String) {
+  removeEntitie(id: String) {
     this.simulationsObjects.delete(id)
   }
 
   // loop auf simulationsObjects und führe simulate aus
   // emitte auf simulation-channel
-  private run() {
+  run() {
     this.theLoop = setInterval(() => {
       this.simulationsObjects.forEach((item: SimulationSkellet) => {
         item.simulate()
@@ -76,7 +55,7 @@ export default class Simulation<R extends IRespond> {
   }
 
   // connecte auf simulation emitter und sende als SSE-stream
-  private sendSSEStream(res: express.Response) {
+  sendSSEStream(res: express.Response) {
     let sseID: number = 1
     this.emitter.on('simulation', (result: R) => {
       res.write(`id: ${sseID}\n`)
@@ -88,7 +67,7 @@ export default class Simulation<R extends IRespond> {
   }
 
   // call run damit simulations startet
-  private start() {
+  start() {
     if (!this.isRunning) {
       this.run()
       this.isRunning = true
@@ -96,7 +75,7 @@ export default class Simulation<R extends IRespond> {
   }
 
   // stopp intervall in der simulations liegt
-  private stopp() {
+  stopp() {
     clearInterval(this.theLoop)
     this.isRunning = false
   }
