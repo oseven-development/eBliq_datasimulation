@@ -35,7 +35,7 @@ export default class Simulation<R extends IRespond> {
         // console.log(result)
         // })
       })
-    }, Number(process.env.SimulationSpeed) || 500)
+    }, Number(process.env.SimulationSpeed) || 3000)
 
     // for (let i = 0; i <= 1000; i++) {
     //   this.simulationsObjects.forEach(async (item: any) => {

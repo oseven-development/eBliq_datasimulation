@@ -14,7 +14,7 @@ interface Part {
 
 const Parts: Part[] = [
   {
-    name: 'Teil A',
+    name: 'TeilA',
     trips: 10,
     currentTrip: 0,
     wear: 5,
