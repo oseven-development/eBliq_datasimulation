@@ -60,15 +60,15 @@ Parameters:
   VpcCidrBlock:
     Type: String
     Description: Optional - CIDR/IP range for the VPC
-    Default: 10.20.0.0/16
+    Default: 10.0.0.0/16
   SubnetCidrBlock1:
     Type: String
     Description: Optional - CIDR/IP range for the VPC
-    Default: 10.20.0.0/24
+    Default: 10.0.0.0/24
   SubnetCidrBlock2:
     Type: String
     Description: Optional - CIDR/IP range for the VPC
-    Default: 10.20.1.0/24
+    Default: 10.0.1.0/24
   IsFargate:
     Type: String
     Description: Optional - Whether to launch instances and create auto scaling group.
@@ -121,9 +121,9 @@ Resources:
     Properties:
       Tags:
         - Key: 'Name'
-          Value: 'foo'
+          Value: !Join [' ', ['ECS', !Ref 'EcsClusterName', '-', 'InternetGateway']]
         - Key: 'Description'
-          Value: 'foo'
+          Value: !Join [' ', ['Created for ECS cluster', !Ref 'EcsClusterName']]
   AttachGateway:
     Type: AWS::EC2::VPCGatewayAttachment
     Properties:
@@ -135,9 +135,9 @@ Resources:
       VpcId: !Ref 'Vpc'
       Tags:
         - Key: 'Name'
-          Value: 'foo'
+          Value: !Join [' ', ['ECS', !Ref 'EcsClusterName', '-', 'RouteTable']]
         - Key: 'Description'
-          Value: 'foo'
+          Value: !Join [' ', ['Created for ECS cluster', !Ref 'EcsClusterName']]
   PublicRouteViaIgw:
     Type: AWS::EC2::Route
     DependsOn: AttachGateway
@@ -160,64 +160,147 @@ Resources:
     Properties:
       GroupDescription: ECS Allowed Ports
       VpcId: !Ref 'Vpc'
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 80
-          ToPort: 80
-          CidrIp: 0.0.0.0/0
+      SecurityGroupIngress: !If
+        - CreateELB
+        - - IpProtocol: 'tcp'
+            FromPort: !Ref 'EcsPort'
+            ToPort: !Ref 'EcsPort'
+            CidrIp: !Ref 'SourceCidr'
+          - IpProtocol: 'tcp'
+            FromPort: '1'
+            ToPort: '65535'
+            SourceSecurityGroupId: !Ref 'AlbSecurityGroup'
+        - - IpProtocol: 'tcp'
+            FromPort: !Ref 'EcsPort'
+            ToPort: !Ref 'EcsPort'
+            CidrIp: !Ref 'SourceCidr'
       Tags:
         - Key: 'Name'
-          Value: 'foo'
+          Value:
+            !Join [
+              ' ',
+              ['ECS', !Ref 'EcsClusterName', '-', 'ECS SecurityGroup'],
+            ]
         - Key: 'Description'
-          Value: 'foo'
-  # ECS
-  # Repo
-  MyRepository: 
-    Type: AWS::ECR::Repository
-    Properties: 
-      RepositoryName: "test-repository"
-      RepositoryPolicyText: 
-        Version: "2012-10-17"
-        Statement: 
-          - 
-            Sid: AllowPushPull
-            Effect: Allow
-            Principal: 
-              AWS: 
-                - "arn:aws:iam::123456789012:user/Bob"
-                - "arn:aws:iam::123456789012:user/Alice"
-            Action: 
-              - "ecr:GetDownloadUrlForLayer"
-              - "ecr:BatchGetImage"
-              - "ecr:BatchCheckLayerAvailability"
-              - "ecr:PutImage"
-              - "ecr:InitiateLayerUpload"
-              - "ecr:UploadLayerPart"
-              - "ecr:CompleteLayerUpload"
-  # Cluster
-  MyCluster:
-    Type: AWS::ECS::Cluster
-    
+          Value: !Join [' ', ['Created for ECS cluster', !Ref 'EcsClusterName']]
+  AlbSecurityGroup:
+    Condition: CreateELB
+    Type: AWS::EC2::SecurityGroup
     Properties:
-      ClusterName: String
-  # Task 
-  # noch fertig machen!
-  taskdefinition: 
-    Type: AWS::ECS::TaskDefinition
-
-    Properties: 
-      NetworkMode: awsvpc
-      RequiresCompatibilities:
-        - "FARGATE"
-
-Outputs:
-  EcsInstanceAsgName:
+      GroupDescription: ELB Allowed Ports
+      VpcId: !Ref 'Vpc'
+      SecurityGroupIngress:
+        - IpProtocol: 'tcp'
+          FromPort: !Ref 'ElbPort'
+          ToPort: !Ref 'ElbPort'
+          CidrIp: !Ref 'SourceCidr'
+      Tags:
+        - Key: 'Name'
+          Value:
+            !Join [
+              ' ',
+              ['ECS', !Ref 'EcsClusterName', '-', 'ALB SecurityGroup'],
+            ]
+        - Key: 'Description'
+          Value: !Join [' ', ['Created for ECS cluster', !Ref 'EcsClusterName']]
+  DefaultTargetGroup:
+    Condition: CreateELB
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      VpcId: !Ref 'Vpc'
+      Port: !Ref 'ElbPort'
+      TargetType: !Ref 'TargetType'
+      Protocol: HTTP
+      Tags:
+        - Key: 'Name'
+          Value: !Join [' ', ['ECS', !Ref 'EcsClusterName', '-', 'TargetGroup']]
+        - Key: 'Description'
+          Value: !Join [' ', ['Created for ECS cluster', !Ref 'EcsClusterName']]
+  EcsElasticLoadBalancer:
+    Condition: CreateELB
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      SecurityGroups:
+        - !Ref 'AlbSecurityGroup'
+      Subnets:
+        - !Ref 'PublicSubnetAz1'
+        - !Ref 'PublicSubnetAz2'
+      Scheme: internet-facing
+      Tags:
+        - Key: 'Name'
+          Value: !Join [' ', ['ECS', !Ref 'EcsClusterName', '-', 'ALB']]
+        - Key: 'Description'
+          Value: !Join [' ', ['Created for ECS cluster', !Ref 'EcsClusterName']]
+  LoadBalancerListener:
+    Condition: CreateELB
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref 'EcsElasticLoadBalancer'
+      Port: !Ref 'ElbPort'
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref 'DefaultTargetGroup'
+  EcsInstanceLc:
     Condition: LaunchInstances
-    Description: Auto Scaling Group Name for ECS Instances
-    Value: 'Test'
-  EcsElbName:
-    Description: Load Balancer for ECS Service
-    Value: 'test'
-  Version:
-    Description: ECS Cloudformation template version
-    Value: 3.0.0
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      ImageId: !Ref 'EcsAmiId'
+      InstanceType: !Ref 'EcsInstanceType'
+      AssociatePublicIpAddress: true
+      IamInstanceProfile: !Ref 'IamRoleInstanceProfile'
+      KeyName: !If [CreateEC2LCWithKeyPair, !Ref 'KeyName', !Ref 'AWS::NoValue']
+      SecurityGroups:
+        - !Ref 'EcsSecurityGroup'
+      UserData: !If
+        - SetEndpointToECSAgent
+        - !Base64
+          'Fn::Join':
+            - ''
+            - - |
+                #!/bin/bash
+              - echo ECS_CLUSTER=
+              - !Ref EcsClusterName
+              - ' >> /etc/ecs/ecs.config'
+              - |-
+
+                echo ECS_BACKEND_HOST=
+              - !Ref EcsEndpoint
+              - ' >> /etc/ecs/ecs.config'
+        - !Base64
+          'Fn::Join':
+            - ''
+            - - |
+                #!/bin/bash
+              - echo ECS_CLUSTER=
+              - !Ref EcsClusterName
+              - ' >> /etc/ecs/ecs.config'
+  EcsInstanceAsg:
+    Condition: LaunchInstances
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      VPCZoneIdentifier:
+        - !Join [',', [!Ref 'PublicSubnetAz1', !Ref 'PublicSubnetAz2']]
+      LaunchConfigurationName: !Ref 'EcsInstanceLc'
+      MinSize: '0'
+      MaxSize: !Ref 'AsgMaxSize'
+      DesiredCapacity: !Ref 'AsgMaxSize'
+      Tags:
+        - Key: 'Name'
+          Value:
+            !Join [' ', ['ECS', !Ref 'EcsClusterName', '-', 'EC2 Instance']]
+          PropagateAtLaunch: true
+        - Key: 'Description'
+          Value: !Join [' ', ['Created for ECS cluster', !Ref 'EcsClusterName']]
+          PropagateAtLaunch: true
+# Outputs:
+#   EcsInstanceAsgName:
+#     Condition: LaunchInstances
+#     Description: Auto Scaling Group Name for ECS Instances
+#     Value: !Ref 'EcsInstanceAsg'
+#   EcsElbName:
+#     Description: Load Balancer for ECS Service
+#     Value: !If [CreateELB, !Ref 'EcsElasticLoadBalancer', '']
+#   Version:
+#     Description: ECS Cloudformation template version
+#     Value: 3.0.0

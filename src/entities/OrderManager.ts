@@ -22,7 +22,6 @@ export interface IRespond {
   // @FIXME delete any!
   value: IMyOrder[]
 }
-
 interface IMyOrder {
   company: ICompany
   products: IProducts[]
