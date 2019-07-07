@@ -1,62 +1,21 @@
 
 AWSTemplateFormatVersion: '2010-09-09'
-Description: AWS CloudFormation template to create a new ECS Fargate First Run stack
+Description: ebliq Datasimulation ECS Fargate
 Parameters:
-  EcsAmiId:
+  ProjectName:
     Type: String
-    Description: ECS AMI Id
-  EcsInstanceType:
-    Type: String
-    Description: ECS EC2 instance type
-    Default: t2.micro
-    ConstraintDescription: must be a valid EC2 instance type.
-  KeyName:
-    Type: String
-    Description: Optional - Name of an existing EC2 KeyPair to enable SSH access to the ECS instances
-    Default: ''
-  AsgMaxSize:
-    Type: Number
-    Description: Maximum size and initial Desired Capacity of ECS Auto Scaling Group
-    Default: '1'
-  IamRoleInstanceProfile:
-    Type: String
-    Description: Name or the Amazon Resource Name (ARN) of the instance profile associated with the IAM role for the instance
-  EcsClusterName:
-    Type: String
-    Description: ECS Cluster Name
+    Description: Name of the Project
     Default: default
-  EcsPort:
-    Type: String
-    Description: Optional - Security Group port to open on ECS instances - defaults to port 80
-    Default: '80'
-  ElbPort:
-    Type: String
-    Description: Optional - Security Group port to open on ELB - port 80 will be open by default
-    Default: '80'
-  ElbHealthCheckTarget:
-    Type: String
-    Description: Optional - Health Check Target for ELB - defaults to HTTP:80/
-    Default: HTTP:80/
-  TargetGroupName:
-    Type: String
-    Description: The target group name
-    Default: ECSFirstRunTargetGroup
+
+  # EcsClusterName:
+  #   Type: String
+  #   Description: ECS Cluster Name
+  #   Default: default
+
   SourceCidr:
     Type: String
-    Description: Optional - CIDR/IP range for EcsPort and ElbPort - defaults to 0.0.0.0/0
+    Description: 'Optional - CIDR/IP range for EcsPort and ElbPort - defaults to 0.0.0.0/0'
     Default: 0.0.0.0/0
-  EcsEndpoint:
-    Type: String
-    Description: 'Optional - ECS Endpoint for the ECS Agent to connect to'
-    Default: ''
-  CreateElasticLoadBalancer:
-    Type: String
-    Description: 'Optional - When set to true, creates a ELB for ECS Service'
-    Default: 'false'
-  VpcAvailabilityZones:
-    Type: CommaDelimitedList
-    Description: 'Optional - Comma-delimited list of two VPC availability zones in which to create subnets'
-    Default: ''
   VpcCidrBlock:
     Type: String
     Description: Optional - CIDR/IP range for the VPC
@@ -69,61 +28,72 @@ Parameters:
     Type: String
     Description: Optional - CIDR/IP range for the VPC
     Default: 10.20.1.0/24
-  IsFargate:
+  EnvironmentType: 
+    Description: Environment type.
+    Default: test
     Type: String
-    Description: Optional - Whether to launch instances and create auto scaling group.
-    Default: 'true'
-  TargetType:
-    Type: String
-    Description: Optional - the ALB target group target type, defaults to ip
-    Default: 'ip'
-# Conditions:
-#   SetEndpointToECSAgent: !Not [!Equals [!Ref 'EcsEndpoint', '']]
-#   CreateELB: !Equals [!Ref 'CreateElasticLoadBalancer', 'true']
-#   CreateEC2LCWithKeyPair: !Not [!Equals [!Ref 'KeyName', '']]
-#   UseSpecifiedVpcAvailabilityZones:
-#     !Not [!Equals [!Join ['', !Ref 'VpcAvailabilityZones'], '']]
-#   LaunchInstances: !Equals [!Ref 'IsFargate', 'false']
+    AllowedValues: 
+      - prod
+      - test
+    ConstraintDescription: must specify prod or test.
+  ApplicationPort: 
+    Type: Number
+    Description: 'Port Application'
+    Default: '8080'
+
+
+Conditions:
+  CreateProdResources: !Equals [!Ref EnvironmentType, prod]
+  # SetEndpointToECSAgent: !Not [!Equals [!Ref 'EcsEndpoint', '']]
+  # CreateELB: !Equals [!Ref 'CreateElasticLoadBalancer', 'true']
+  # CreateEC2LCWithKeyPair: !Not [!Equals [!Ref 'KeyName', '']]
+  # UseSpecifiedVpcAvailabilityZones:
+  #   !Not [!Equals [!Join ['', !Ref 'VpcAvailabilityZones'], '']]
+  # LaunchInstances: !Equals [!Ref 'IsFargate', 'false']
+  
 Resources:
+  # Type: AWS::IAM::Role
+  #   Properties: 
+  #     AssumeRolePolicyDocument:
+  #       JSON object
+  #     ManagedPolicyArns:
+  #       - String
+  #     MaxSessionDuration: Integer
+  #     Path: String
+  #     PermissionsBoundary: String
+  #     Policies:
+  #       - Policies
+  #     RoleName: String
   Vpc:
     Type: AWS::EC2::VPC
     Properties:
       CidrBlock: !Ref 'VpcCidrBlock'
       EnableDnsSupport: true
       EnableDnsHostnames: true
-      Tags:
-        - Key: 'Name'
-          Value: 'some Text'
-          # Value: !Join [' ', ['ECS', !Ref 'EcsClusterName', '-', 'VPC']]
-        - Key: 'Description'
-          Value: 'some Tex'
-          # Value: !Join [' ', ['Created for ECS cluster', !Ref 'EcsClusterName']]
+      Tags: 
+        - 
+          Key: 'EnvironmentType'
+          Value: !Ref EnvironmentType
   PublicSubnetAz1:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref 'Vpc'
       CidrBlock: !Ref 'SubnetCidrBlock1'
-      AvailabilityZone: "eu-central-1"
-      Tags:
-      - Key: foo
-        Value: bar
+      Tags: 
+        - 
+          Key: 'EnvironmentType'
+          Value: !Ref EnvironmentType
   PublicSubnetAz2:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref 'Vpc'
       CidrBlock: !Ref 'SubnetCidrBlock2'
-      AvailabilityZone: "eu-central-2"
-      Tags:
-      - Key: foo
-        Value: bar
+      Tags: 
+        - 
+          Key: 'EnvironmentType'
+          Value: !Ref EnvironmentType
   InternetGateway:
     Type: AWS::EC2::InternetGateway
-    Properties:
-      Tags:
-        - Key: 'Name'
-          Value: 'foo'
-        - Key: 'Description'
-          Value: 'foo'
   AttachGateway:
     Type: AWS::EC2::VPCGatewayAttachment
     Properties:
@@ -133,11 +103,10 @@ Resources:
     Type: AWS::EC2::RouteTable
     Properties:
       VpcId: !Ref 'Vpc'
-      Tags:
-        - Key: 'Name'
-          Value: 'foo'
-        - Key: 'Description'
-          Value: 'foo'
+      Tags: 
+        - 
+          Key: 'EnvironmentType'
+          Value: !Ref EnvironmentType
   PublicRouteViaIgw:
     Type: AWS::EC2::Route
     DependsOn: AttachGateway
@@ -159,65 +128,71 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: ECS Allowed Ports
-      VpcId: !Ref 'Vpc'
+      VpcId: !Ref Vpc
       SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: 80
-          ToPort: 80
-          CidrIp: 0.0.0.0/0
-      Tags:
-        - Key: 'Name'
-          Value: 'foo'
-        - Key: 'Description'
-          Value: 'foo'
-  # ECS
-  # Repo
+          FromPort: !Ref ApplicationPort
+          ToPort: !Ref ApplicationPort
+          CidrIp: !Ref SourceCidr
+      Tags: 
+        - 
+          Key: 'EnvironmentType'
+          Value: !Ref EnvironmentType
+  MyCluster:
+    Type: AWS::ECS::Cluster 
   MyRepository: 
     Type: AWS::ECR::Repository
+  # ContainerDefinitions Name automatisch erzeugen
+  taskdefinition: 
+    Type: AWS::ECS::TaskDefinition
     Properties: 
-      RepositoryName: "test-repository"
-      RepositoryPolicyText: 
+      NetworkMode: awsvpc
+      Cpu: "256"
+      Memory: "512"
+      ExecutionRoleArn : !GetAtt IAMTaskExecution.Arn
+      RequiresCompatibilities:
+        - "FARGATE"
+      ContainerDefinitions: 
+        - 
+          Name: !Join [ '', [ 'Task', !Ref ProjectName ] ]
+          Image: !Join [ '', [ '403039540759.dkr.ecr.eu-central-1.amazonaws.com/', !Ref MyRepository ] ]  
+          Essential: true
+          PortMappings:
+          -
+            ContainerPort: !Ref ApplicationPort
+            HostPort: !Ref ApplicationPort
+            Protocol: TCP
+          Environment:
+          -
+            Name: 'port'
+            Value: !Ref ApplicationPort
+  IAMTaskExecution:
+    Type: "AWS::IAM::Role"
+    Properties: 
+      AssumeRolePolicyDocument: 
         Version: "2012-10-17"
         Statement: 
           - 
-            Sid: AllowPushPull
-            Effect: Allow
+            Effect: "Allow"
             Principal: 
-              AWS: 
-                - "arn:aws:iam::123456789012:user/Bob"
-                - "arn:aws:iam::123456789012:user/Alice"
+              Service: 
+                - "ecs-tasks.amazonaws.com"
             Action: 
-              - "ecr:GetDownloadUrlForLayer"
-              - "ecr:BatchGetImage"
-              - "ecr:BatchCheckLayerAvailability"
-              - "ecr:PutImage"
-              - "ecr:InitiateLayerUpload"
-              - "ecr:UploadLayerPart"
-              - "ecr:CompleteLayerUpload"
-  # Cluster
-  MyCluster:
-    Type: AWS::ECS::Cluster
-    
-    Properties:
-      ClusterName: String
-  # Task 
-  # noch fertig machen!
-  taskdefinition: 
-    Type: AWS::ECS::TaskDefinition
-
-    Properties: 
-      NetworkMode: awsvpc
-      RequiresCompatibilities:
-        - "FARGATE"
-
-Outputs:
-  EcsInstanceAsgName:
-    Condition: LaunchInstances
-    Description: Auto Scaling Group Name for ECS Instances
-    Value: 'Test'
-  EcsElbName:
-    Description: Load Balancer for ECS Service
-    Value: 'test'
-  Version:
-    Description: ECS Cloudformation template version
-    Value: 3.0.0
+              - "sts:AssumeRole"
+      Path: "/"
+      Policies: 
+        - 
+          PolicyName: "AmazonECSTaskExecutionRolePolicy"
+          PolicyDocument: 
+            Version: "2012-10-17"
+            Statement: 
+              - 
+                Effect: "Allow"
+                Action:
+                - "ecr:GetAuthorizationToken"
+                - "ecr:BatchCheckLayerAvailability"
+                - "ecr:GetDownloadUrlForLayer"
+                - "ecr:BatchGetImage"
+                - "logs:CreateLogStream"
+                - "logs:PutLogEvents"
+                Resource: "*"
